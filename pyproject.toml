@@ -9,6 +9,7 @@ packages = [{include = "pulumi_components"}]
 [tool.poetry.dependencies]
 python = "^3.10"
 pulumi = "^3.50.2"
+pulumi-aws = "^5.25.0"
 
 
 [tool.poetry.group.dev.dependencies]
