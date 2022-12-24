@@ -22,7 +22,7 @@ class Vpc(pulumi.CustomResource):
                  instance_tenancy: str = "default",
                  opts: Optional[pulumi.ResourceOptions] = None,
                  ):
-        super().__init__("pulumi-components:aws:vpc", name, {}, opts)
+        super().__init__("pulumi-components:aws:components:vpc", name, {}, opts)
 
         if instance_tenancy.lower() not in ["default", "dedicated"]:
             raise ValueError("instance tenancy can only have default or dedicated as values")
