@@ -41,3 +41,10 @@ class Vpc(pulumi.CustomResource):
                 opts=pulumi.ResourceOptions(parent=self)
             )
         )
+
+        # Create internet gateway resource
+        self.igw = aws.ec2.InternetGateway(
+            "internet-gateway",
+            vpc_id=self.vpc.id,
+            opts=pulumi.ResourceOptions(parent=self.vpc)
+        )
