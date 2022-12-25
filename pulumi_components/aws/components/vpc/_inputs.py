@@ -40,37 +40,37 @@ class VpcPeeringArgs:
         pulumi.set(self, "aws_profile", aws_profile)
 
     @property
-    @pulumi.getter()
+    @pulumi.getter
     def name(self) -> pulumi.Input[str]:
         """vpc name"""
         ...
 
     @property
-    @pulumi.getter()
+    @pulumi.getter
     def vpc_id(self) -> pulumi.Input[str]:
         """vpc id"""
         ...
 
     @property
-    @pulumi.getter()
+    @pulumi.getter
     def accepter(self) -> bool:
         """Identifies the side of the peering connection"""
         ...
 
     @property
-    @pulumi.getter()
+    @pulumi.getter
     def cidr(self) -> Optional[str]:
         """cidr in peering connection"""
         ...
 
     @property
-    @pulumi.getter()
+    @pulumi.getter
     def account_id(self) -> Optional[str]:
         """account_id associated with the peering connection"""
         ...
 
     @property
-    @pulumi.getter()
+    @pulumi.getter
     def aws_profile(self) -> Optional[str]:
         """aws profile required for peering connection"""
         ...
