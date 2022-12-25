@@ -89,7 +89,7 @@ class Vpc(pulumi.CustomResource):
                 f"{peering_profile}-{peering_vpc_name}-remote-provider",
                 profile=peering_profile,
                 region=region,
-                skip_metadata_api_check=False
+                skip_metadata_api_check=False,
             )
             # Create remote resource option
             remote_resource_option = pulumi.ResourceOptions(
@@ -109,7 +109,7 @@ class Vpc(pulumi.CustomResource):
             remote_vpc = aws.ec2.Vpc.get(
                 f"{peering_vpc_name}-vpc",
                 id=peering_vpc_id,
-                opts=remote_resource_option
+                opts=remote_resource_option,
             )
             remote_cidr_block = remote_vpc.cidr_block
         else:
@@ -133,10 +133,10 @@ class Vpc(pulumi.CustomResource):
                 tags=self.vpc.tags_all.apply(
                     lambda x: {
                         "Name": f"[{x['Name']}] <-> [{peering_vpc_name}]",
-                        "Side": "Local" if same_account_peering else "Requester"
+                        "Side": "Local" if same_account_peering else "Requester",
                     }
                 ),
-                opts=this_resource_option
+                opts=this_resource_option,
             )
         else:
             # If we are not the requester, but accepter and the peering is not
@@ -146,7 +146,7 @@ class Vpc(pulumi.CustomResource):
                 remote_peering_connection = aws.ec2.get_vpc_peering_connection_output(
                     peer_vpc_id=peering_vpc_id,
                     vpc_id=self.vpc.id,
-                    opts=remote_invoke_option
+                    opts=remote_invoke_option,
                 )
                 # Create vpc peering accepter connection
                 peering_connection = aws.ec2.VpcPeeringConnectionAccepter(
@@ -156,18 +156,17 @@ class Vpc(pulumi.CustomResource):
                     tags=self.vpc.tags_all.apply(
                         lambda x: {
                             "Name": f"[{x['Name']}] <-> [{peering_vpc_name}]",
-                            "Side": "Accepter"
+                            "Side": "Accepter",
                         }
                     ),
-                    opts=this_resource_option
+                    opts=this_resource_option,
                 )
             else:
                 # If we are accepter and the peering
                 # is in the same aws account.
                 # we simply retrieve the peering connection
                 peering_connection = aws.ec2.get_vpc_peering_connection_output(
-                    peer_vpc_id=self.vpc.id,
-                    vpc_id=peering_vpc_id
+                    peer_vpc_id=self.vpc.id, vpc_id=peering_vpc_id
                 )
 
                 # Create vpc routes
@@ -179,7 +178,5 @@ class Vpc(pulumi.CustomResource):
                     "peering_vpc": remote_vpc,
                     "connection": peering_connection,
                     "vpc_routes": routes,
-                    "peering_cidr": remote_cidr_block
+                    "peering_cidr": remote_cidr_block,
                 }
-
-
