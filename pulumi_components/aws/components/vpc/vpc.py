@@ -73,7 +73,7 @@ class Vpc(pulumi.CustomResource):
         remote_vpc = None
         remote_cidr_block = None
         remote_account_id = None
-        same_account_peering = None
+        same_account_peering = False
         conf = pulumi.Config("aws")
         # If we have the remote aws account id,
         # We must also have the cidr as well.
@@ -121,11 +121,65 @@ class Vpc(pulumi.CustomResource):
         if remote_account_id == this_account_id and region == conf.get("region"):
             same_account_peering = True
 
+        # If we are requesting the peering connection
         if not peering_accepter:
             peering_connection = aws.ec2.VpcPeeringConnection(
                 f"{peering_vpc_name}-peering-connection",
-
-                )
+                auto_accept=same_account_peering,
+                peer_vpc_id=peering_vpc_id,
+                vpc_id=self.vpc.id,
+                peer_owner_id=remote_account_id,
+                peer_region=None if same_account_peering else region,
+                tags=self.vpc.tags_all.apply(
+                    lambda x: {
+                        "Name": f"[{x['Name']}] <-> [{peering_vpc_name}]",
+                        "Side": "Local" if same_account_peering else "Requester"
+                    }
+                ),
+                opts=this_resource_option
             )
+        else:
+            # If we are not the requester, but accepter and the peering is not
+            # in the same aws account
+            if not same_account_peering:
+                # We need to first get the peering connection
+                remote_peering_connection = aws.ec2.get_vpc_peering_connection_output(
+                    peer_vpc_id=peering_vpc_id,
+                    vpc_id=self.vpc.id,
+                    opts=remote_invoke_option
+                )
+                # Create vpc peering accepter connection
+                peering_connection = aws.ec2.VpcPeeringConnectionAccepter(
+                    f"{peering_vpc_name}-peering-accepter-connection",
+                    vpc_peering_connection_id=remote_peering_connection.id,
+                    auto_accept=True,
+                    tags=self.vpc.tags_all.apply(
+                        lambda x: {
+                            "Name": f"[{x['Name']}] <-> [{peering_vpc_name}]",
+                            "Side": "Accepter"
+                        }
+                    ),
+                    opts=this_resource_option
+                )
+            else:
+                # If we are accepter and the peering
+                # is in the same aws account.
+                # we simply retrieve the peering connection
+                peering_connection = aws.ec2.get_vpc_peering_connection_output(
+                    peer_vpc_id=self.vpc.id,
+                    vpc_id=peering_vpc_id
+                )
+
+                # Create vpc routes
+                routes = aws.ec2.RouteTableRouteArgs(
+                    cidr_block=peering_cidr,
+                    vpc_peering_connection_id=peering_connection.id,
+                )
+                return {
+                    "peering_vpc": remote_vpc,
+                    "connection": peering_connection,
+                    "vpc_routes": routes,
+                    "peering_cidr": remote_cidr_block
+                }
 
 
