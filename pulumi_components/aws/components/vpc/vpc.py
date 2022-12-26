@@ -34,6 +34,7 @@ class Vpc(pulumi.CustomResource):
         # Check if correct cidr has been passed
         vpc_cidr = ipaddress.IPv4Network(cidr)
 
+        self.protected_eip = protected_eip
         # Create a VPC resource
         self.vpc = aws.ec2.Vpc(
             "vpc",
@@ -82,7 +83,20 @@ class Vpc(pulumi.CustomResource):
         )
         opts = pulumi.ResourceOptions(parent=self.vpc)
         for subnet in public_subnets:
-            pass
+            public_subnet = self._create_subnet(
+                subnet.cidr,
+                subnet.az,
+                self.pubic_route_table,
+                False,
+                "public",
+                subnet.tags,
+            )
+            self.public_subnets.append(public_subnet)
+            self.public_subnet_ids.append(public_subnet.id)
+
+        # Create Private subnets
+        self.private_subnets = []
+        self.private_subnet_ids = []
 
     def _create_peering(
         self,
@@ -247,3 +261,20 @@ class Vpc(pulumi.CustomResource):
             opts=pulumi.ResourceOptions(parent=route_table),
         )
         return subnet
+
+    def _create_nat_gateway(self, name, subnet: aws.ec2.Subnet) -> aws.ec2.NatGateway:
+        """Creates EIP and NatGateway resources.
+        Returns NatGateway resource"""
+        eip = aws.ec2.Eip(
+            f"{name}-nat-eip",
+            vpc=True,
+            opts=pulumi.ResourceOptions(protect=self.protected_eip, parent=subnet),
+        )
+        nat = aws.ec2.NatGateway(
+            f"{name}-nat-gateway",
+            allocation_id=eip.id,
+            connectivity_type="public",
+            subnet_id=subnet.id,
+            opts=pulumi.ResourceOptions(parent=subnet),
+        )
+        return nat
