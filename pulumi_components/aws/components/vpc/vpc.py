@@ -7,7 +7,7 @@ import pulumi_aws as aws
 from _inputs import VpcPeeringArgs, VpcSubnetArgs
 
 
-class Vpc(pulumi.CustomResource):
+class Vpc(pulumi.ComponentResource):
     """A class defining a VPC custom resource"""
 
     def __init__(
@@ -98,14 +98,13 @@ class Vpc(pulumi.CustomResource):
             nat_details: Mapping[str, aws.ec2.NatGateway] = {}
             if private_subnets and ha_nat:
                 nat_details[subnet.az] = self._create_nat_gateway(
-                    f"{subnet.az}",
-                    subnet
+                    f"{subnet.az}", subnet
                 )
 
         # Create Private subnets
         self.private_subnets = []
         self.private_subnet_ids = []
-        self.private_route_tables
+        self.private_route_tables = []
         # If Nat gateway is not highly available
         # We create only one route-table and send
         # traffic to the NAT Gateway in
@@ -115,11 +114,43 @@ class Vpc(pulumi.CustomResource):
                 [
                     aws.ec2.RouteTableRouteArgs(
                         cidr_block="0.0.0.0/0",
-                        nat_gateway_id=list(nat_details.values())[0].id
+                        nat_gateway_id=list(nat_details.values())[0].id,
                     )
-                ] * self.vpc_peering_routes,
-                opts=pulumi.ResourceOptions(parent=self.vpc)
+                ]
+                * self.vpc_peering_routes,
+                opts=pulumi.ResourceOptions(parent=self.vpc),
             )
+            self.private_route_tables.append(private_rt)
+            for subnet in private_subnets:
+                if ha_nat:
+                    private_rt = self._create_rout_tables(
+                        f"{subnet.az}-private-rt",
+                        [
+                            aws.ec2.RouteTableRouteArgs(
+                                cidr_block="0.0.0.0/0",
+                                nat_gateway_id=nat_details.get(f"{subnet.az}").id,
+                            )
+                        ]
+                        * self.vpc_peering_routes,
+                        opts=pulumi.ResourceOptions(parent=self.vpc),
+                    )
+                    self.private_route_tables.append(private_rt)
+                private_subnet = self._create_subnet(
+                    subnet.cidr, subnet.az, private_rt, True, "private", subnet.tags
+                )
+                self.private_subnets.append(private_subnet)
+                self.private_subnet_ids.append(private_subnet.id)
+        self.register_outputs(
+            {
+                "vpc": self.vpc,
+                "igw": self.igw,
+                "public_subnets": self.public_subnets,
+                "public_subnet_ids": self.public_subnet_ids,
+                "private_subnets": self.private_subnets,
+                "private_subnet_ids": self.private_subnet_ids,
+                "private_route_tables": self.private_route_tables,
+            }
+        )
 
     def _create_peering(
         self,
