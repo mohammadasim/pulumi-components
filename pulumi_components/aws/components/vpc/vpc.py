@@ -16,12 +16,12 @@ class Vpc(pulumi.CustomResource):
         cidr: pulumi.Input[str],
         public_subnets: Sequence[VpcSubnetArgs],
         private_subnets: Optional[VpcSubnetArgs],
-        vpn_peering: Optional[VpcPeeringArgs] = None,
-        other_peering: Optional[Sequence[VpcPeeringArgs]] = None,
+        vpc_peering: Optional[Sequence[VpcPeeringArgs]] = None,
         ha_nat: bool = True,
         enable_dns_hostname: bool = True,
         enable_dns_support: bool = True,
         instance_tenancy: str = "default",
+        protected_eip: bool = False,
         opts: Optional[pulumi.ResourceOptions] = None,
     ):
         super().__init__("pulumi-components:aws:components:vpc", name, {}, opts)
@@ -52,8 +52,38 @@ class Vpc(pulumi.CustomResource):
             vpc_id=self.vpc.id,
             opts=pulumi.ResourceOptions(parent=self.vpc),
         )
-        # Create VPC and VPN peering
+        # Create VPC peering
         self.vpc_peering_routes = []
+        if vpc_peering:
+            for peering in vpc_peering:
+                peering_details = self._create_peering(
+                    peering.accepter,
+                    peering.name,
+                    peering.vpc_id,
+                    peering.aws_profile,
+                    peering.account_id,
+                    peering.cidr,
+                )
+                self.vpc_peering_routes.append(peering_details.get("vpc_routes"))
+
+        # Create public subnets
+        self.public_subnets = []
+        self.public_subnet_ids = []
+        self.pubic_route_table = (
+            self._create_rout_tables(
+                "public-rt",
+                self.vpc.id,
+                [
+                    aws.ec2.RouteTableRouteArgs(
+                        cidr_block="0.0.0.0/0", gateway_id=self.igw.id
+                    )
+                ]
+                * self.vpc_peering_routes,
+            ),
+        )
+        opts = pulumi.ResourceOptions(parent=self.vpc)
+        for subnet in public_subnets:
+            pass
 
     def _create_peering(
         self,
@@ -180,3 +210,42 @@ class Vpc(pulumi.CustomResource):
                     "vpc_routes": routes,
                     "peering_cidr": remote_cidr_block,
                 }
+
+    def _create_rout_tables(
+        self,
+        name: str,
+        vpc_id: str,
+        routes: Sequence[aws.ec2.RouteTableRouteArgs],
+        opts: pulumi.ResourceOptions = None,
+    ) -> aws.ec2.RouteTable:
+        """Creates and returns a route table resource with given parameters"""
+        return aws.ec2.RouteTable(name, vpc_id=vpc_id, routes=routes, opts=opts)
+
+    def _create_subnet(
+        self,
+        subnet_cidr: str,
+        zone: str,
+        route_table: aws.ec2.RouteTable,
+        private: bool,
+        label: str,
+        tags: Mapping[str, str] = None,
+    ) -> aws.ec2.Subnet:
+        """Creates subnet and associate it with the provided route table.
+        Returns the subnet resource with given parameters"""
+        subnet = aws.ec2.Subnet(
+            f"{zone}-{label}-subnet",
+            vpc_id=self.vpc.id,
+            availability_zone=zone,
+            cidr_block=subnet_cidr,
+            assign_ipv6_address_on_creation=False,
+            map_public_ip_on_launch=not private,
+            tags=tags,
+            opts=pulumi.ResourceOptions(parent=self.vpc),
+        )
+        aws.ec2.RouteTableAssociation(
+            f"{zone}-{label}-subnet-associate",
+            route_table_id=route_table.id,
+            subnet_id=subnet.id,
+            opts=pulumi.ResourceOptions(parent=route_table),
+        )
+        return subnet
