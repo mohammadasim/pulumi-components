@@ -72,7 +72,6 @@ class Vpc(pulumi.CustomResource):
         self.pubic_route_table = (
             self._create_rout_tables(
                 "public-rt",
-                self.vpc.id,
                 [
                     aws.ec2.RouteTableRouteArgs(
                         cidr_block="0.0.0.0/0", gateway_id=self.igw.id
@@ -214,12 +213,11 @@ class Vpc(pulumi.CustomResource):
     def _create_rout_tables(
         self,
         name: str,
-        vpc_id: str,
         routes: Sequence[aws.ec2.RouteTableRouteArgs],
         opts: pulumi.ResourceOptions = None,
     ) -> aws.ec2.RouteTable:
         """Creates and returns a route table resource with given parameters"""
-        return aws.ec2.RouteTable(name, vpc_id=vpc_id, routes=routes, opts=opts)
+        return aws.ec2.RouteTable(name, vpc_id=self.vpc.id, routes=routes, opts=opts)
 
     def _create_subnet(
         self,
