@@ -9,18 +9,21 @@ import pulumi_aws as aws
 class RdsSecurityGroupIngressArgs:
     """A class defining a security group ingress args resource in rds security group"""
 
-    def __init__(self,
-                 db_engine: str,
-                 description: str,
-                 cidr_blocks: Optional[Sequence[pulumi.Input[str]]] = None,
-                 security_group_ids: Optional[Sequence[pulumi.Input[str]]] = None
-                 ):
+    def __init__(
+        self,
+        db_engine: str,
+        description: str,
+        cidr_blocks: Optional[Sequence[pulumi.Input[str]]] = None,
+        security_group_ids: Optional[Sequence[pulumi.Input[str]]] = None,
+    ):
         if db_engine.lower() == "postgresql":
             port = 5432
         elif db_engine.lower() == "mysql":
             port = 3306
         else:
-            raise ValueError("This component currently only supports Postgres and Mysql")
+            raise ValueError(
+                "This component currently only supports Postgres and Mysql"
+            )
 
         security_group_ingress_args = []
         if cidr_blocks:
@@ -29,7 +32,7 @@ class RdsSecurityGroupIngressArgs:
                 to_port=port,
                 description=description,
                 protocol="tcp",
-                cidr_blocks=cidr_blocks
+                cidr_blocks=cidr_blocks,
             )
             security_group_ingress_args.append(sgi_args)
 
@@ -39,7 +42,7 @@ class RdsSecurityGroupIngressArgs:
                 to_port=port,
                 description=description,
                 protocol="tcp",
-                security_groups=security_group_ids
+                security_groups=security_group_ids,
             )
             security_group_ingress_args.append(sgi_args)
         # Set security_group_ingress_args as a parameter
