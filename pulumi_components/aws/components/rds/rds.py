@@ -74,7 +74,6 @@ class RDSInstance(ComponentResource):
         engine: str,
         engine_version: str,
         identifier: str,
-        identifier_prefix: str,
         password: str,
         vpc_id: str,
         *,
@@ -129,4 +128,52 @@ class RDSInstance(ComponentResource):
         )
         self.security_group_ids = additional_vpc_security_group_ids.append(
             self.security_group.id
+        )
+        self.subnet_group = RdsSubnetGroup(name, subnet_ids)
+        self.rds_instance = aws.rds.Instance(
+            name,
+            args=aws.rds.InstanceArgs(
+                allocated_storage=allocated_storage,
+                instance_class=instance_class,
+                engine=engine,
+                engine_version=engine_version,
+                identifier=identifier,
+                password=password,
+                allow_major_version_upgrade=allow_major_version_upgrade,
+                apply_immediately=apply_immediately,
+                auto_minor_version_upgrade=auto_minor_version_upgrade,
+                backup_retention_period=backup_retention_period,
+                backup_window=backup_window,
+                blue_green_update=blue_green_update,
+                ca_cert_identifier=ca_cert_identifier,
+                character_set_name=character_set_name,
+                copy_tags_to_snapshot=copy_tags_to_snapshot,
+                custom_iam_instance_profile=custom_iam_instance_profile,
+                customer_owned_ip_enabled=customer_owned_ip_enabled,
+                db_name=db_name,
+                delete_automated_backups=delete_automated_backups,
+                deletion_protection=deletion_protection,
+                domain=domain,
+                domain_iam_role_name=domain_iam_role_name,
+                enabled_cloudwatch_logs_exports=enabled_cloudwatch_logs_exports,
+                final_snapshot_identifier=final_snapshot_identifier,
+                iam_database_authentication_enabled=iam_database_authentication_enabled,
+                kms_key_id=kms_key_id,
+                maintenance_window=maintenance_window,
+                max_allocated_storage=max_allocated_storage,
+                monitoring_interval=monitoring_interval,
+                monitoring_role_arn=monitoring_role_arn,
+                multi_az=multi_az,
+                performance_insights_enabled=performance_insights_enabled,
+                performance_insights_kms_key_id=performance_insights_kms_key_id,
+                performance_insights_retention_period=performance_insights_retention_period,
+                publicly_accessible=publicly_accessible,
+                skip_final_snapshot=skip_final_snapshot,
+                storage_encrypted=storage_encrypted,
+                db_subnet_group_name=self.subnet_group.name,
+                vpc_security_group_ids=self.security_group_ids,
+                parameter_group_name="to be added",
+                tags=tags,
+                opts=pulumi.ResourceOptions(parent=self)
+            )
         )
