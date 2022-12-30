@@ -174,6 +174,6 @@ class RDSInstance(ComponentResource):
                 vpc_security_group_ids=self.security_group_ids,
                 parameter_group_name="to be added",
                 tags=tags,
-                opts=pulumi.ResourceOptions(parent=self)
-            )
+                opts=pulumi.ResourceOptions(parent=self),
+            ),
         )
