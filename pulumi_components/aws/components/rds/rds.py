@@ -1,4 +1,4 @@
-from typing import List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence
 
 import pulumi
 import pulumi_aws as aws
@@ -73,9 +73,11 @@ class RDSInstance(ComponentResource):
         instance_class: str,
         engine: str,
         engine_version: str,
+        family: str,
         identifier: str,
         password: str,
         vpc_id: str,
+        parameters: Sequence[Dict],
         *,
         allow_major_version_upgrade: bool = False,
         apply_immediately: bool = False,
@@ -130,6 +132,23 @@ class RDSInstance(ComponentResource):
             self.security_group.id
         )
         self.subnet_group = RdsSubnetGroup(name, subnet_ids)
+        rds_parameter_group_args = []
+        for parameter in parameters:
+            rds_parameter_group_args.append(
+                aws.rds.ParameterGroupParameterArgs(
+                    name=parameter["name"],
+                    value=parameter["value"],
+                    apply_method=parameter["apply_method"]
+                    if "apply_method" in parameter
+                    else "pending-reboot",
+                )
+            )
+        self.parameter_group = aws.rds.ParameterGroup(
+            f"{name}-parameter-group",
+            description=f"Parameter group for {name} rds instance",
+            family=family,
+            parameters=rds_parameter_group_args,
+        )
         self.rds_instance = aws.rds.Instance(
             name,
             args=aws.rds.InstanceArgs(
@@ -172,8 +191,16 @@ class RDSInstance(ComponentResource):
                 storage_encrypted=storage_encrypted,
                 db_subnet_group_name=self.subnet_group.name,
                 vpc_security_group_ids=self.security_group_ids,
-                parameter_group_name="to be added",
+                parameter_group_name=self.parameter_group,
                 tags=tags,
                 opts=pulumi.ResourceOptions(parent=self),
             ),
+        )
+        self.register_outputs(
+            {
+                "instance": self.rds_instance,
+                "parameter_group": self.parameter_group,
+                "subnet_group": self.subnet_group,
+                "security_group": self.security_group,
+            }
         )
