@@ -82,6 +82,7 @@ class Vpc(pulumi.ComponentResource):
                 opts=pulumi.ResourceOptions(parent=self.vpc)
             )
         )
+        nat_details: Mapping[str, aws.ec2.NatGateway] = {}
         for subnet in public_subnets:
             public_subnet = self._create_subnet(
                 subnet.cidr,
@@ -94,12 +95,16 @@ class Vpc(pulumi.ComponentResource):
             self.public_subnets.append(public_subnet)
             self.public_subnet_ids.append(public_subnet.id)
 
-            # Create nat gateways
-            nat_details: Mapping[str, aws.ec2.NatGateway] = {}
+            # Create nat gateways if ha_nat enabled
             if private_subnets and ha_nat:
                 nat_details[subnet.az] = self._create_nat_gateway(
                     f"{subnet.az}", subnet
                 )
+        # If ha_nat is not enabled. We create only one nat gateway
+        # in the az of the first subnet
+        nat_details[public_subnets[0].az] = self._create_nat_gateway(
+            f"{public_subnets[0].az}", self.public_subnets[0]
+        )
 
         # Create Private subnets
         self.private_subnets = []
@@ -117,7 +122,7 @@ class Vpc(pulumi.ComponentResource):
                         nat_gateway_id=list(nat_details.values())[0].id,
                     )
                 ]
-                * self.vpc_peering_routes,
+                * self.vpc_peering_routes if self.vpc_peering_routes else [],
                 opts=pulumi.ResourceOptions(parent=self.vpc),
             )
             self.private_route_tables.append(private_rt)
