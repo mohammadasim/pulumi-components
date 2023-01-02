@@ -4,7 +4,7 @@ from typing import Mapping, Optional, Sequence
 
 import pulumi
 import pulumi_aws as aws
-from _inputs import VpcPeeringArgs, VpcSubnetArgs
+from ._inputs import VpcPeeringArgs, VpcSubnetArgs
 
 
 class Vpc(pulumi.ComponentResource):
@@ -18,7 +18,7 @@ class Vpc(pulumi.ComponentResource):
         private_subnets: Optional[VpcSubnetArgs],
         vpc_peering: Optional[Sequence[VpcPeeringArgs]] = None,
         ha_nat: bool = True,
-        enable_dns_hostname: bool = True,
+        enable_dns_hostnames: bool = True,
         enable_dns_support: bool = True,
         instance_tenancy: str = "default",
         protected_eip: bool = False,
@@ -40,11 +40,11 @@ class Vpc(pulumi.ComponentResource):
             "vpc",
             args=aws.ec2.VpcArgs(
                 cidr_block=str(vpc_cidr),
-                enable_dns_hostname=enable_dns_hostname,
+                enable_dns_hostnames=enable_dns_hostnames,
                 enable_dns_support=enable_dns_support,
                 instance_tenancy=instance_tenancy,
-                opts=pulumi.ResourceOptions(parent=self),
             ),
+            opts=pulumi.ResourceOptions(parent=self),
         )
 
         # Create internet gateway resource
@@ -78,10 +78,10 @@ class Vpc(pulumi.ComponentResource):
                         cidr_block="0.0.0.0/0", gateway_id=self.igw.id
                     )
                 ]
-                * self.vpc_peering_routes,
-            ),
+                * self.vpc_peering_routes if self.vpc_peering_routes else [],
+                opts=pulumi.ResourceOptions(parent=self.vpc)
+            )
         )
-        opts = pulumi.ResourceOptions(parent=self.vpc)
         for subnet in public_subnets:
             public_subnet = self._create_subnet(
                 subnet.cidr,
