@@ -1,7 +1,8 @@
 import pulumi
 import pulumi_aws as aws
 
-project_tags = pulumi.Config.get_object("tags")
+conf = pulumi.Config()
+project_tags = conf.get_object("tags")
 stack_name = pulumi.get_stack()
 
 
@@ -17,7 +18,7 @@ def _tag_resource(args, tags) -> pulumi.ResourceTransformationResult:
     # Check if the aws resource is taggable or not
     if can_be_tagged(args.type_):
         # Skip resources with id
-        if args.opt.id:
+        if args.opts.id:
             return pulumi.ResourceTransformationResult(args.prop, args.opts)
         # We need to handle autoscaling group resource differently
         if args.type_ == "aws:autoscaling/group:Group":
