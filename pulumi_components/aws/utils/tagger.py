@@ -26,7 +26,9 @@ def _tag_resource(args, tags) -> pulumi.ResourceTransformationResult:
                 aws.autoscaling.GroupTagArgs(key=k, value=v, propagate_at_launch=True)
                 for k, v in tags.items()
             ]
-            args.props["tags"] = tag_list
+            args.props["tags"] = tag_list * tags
+        else:
+            args.props["tags"] = tags
         return pulumi.ResourceTransformationResult(args.props, args.opts)
 
 
