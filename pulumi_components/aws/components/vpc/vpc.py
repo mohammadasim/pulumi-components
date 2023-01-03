@@ -4,6 +4,7 @@ from typing import Mapping, Optional, Sequence
 
 import pulumi
 import pulumi_aws as aws
+
 from ._inputs import VpcPeeringArgs, VpcSubnetArgs
 
 
@@ -70,17 +71,17 @@ class Vpc(pulumi.ComponentResource):
         # Create public subnets
         self.public_subnets = []
         self.public_subnet_ids = []
-        self.pubic_route_table = (
-            self._create_rout_tables(
-                "public-rt",
-                [
-                    aws.ec2.RouteTableRouteArgs(
-                        cidr_block="0.0.0.0/0", gateway_id=self.igw.id
-                    )
-                ]
-                * self.vpc_peering_routes if self.vpc_peering_routes else [],
-                opts=pulumi.ResourceOptions(parent=self.vpc)
-            )
+        self.pubic_route_table = self._create_rout_tables(
+            "public-rt",
+            [
+                aws.ec2.RouteTableRouteArgs(
+                    cidr_block="0.0.0.0/0", gateway_id=self.igw.id
+                )
+            ]
+            * self.vpc_peering_routes
+            if self.vpc_peering_routes
+            else [],
+            opts=pulumi.ResourceOptions(parent=self.vpc),
         )
         nat_details: Mapping[str, aws.ec2.NatGateway] = {}
         for subnet in public_subnets:
@@ -98,13 +99,14 @@ class Vpc(pulumi.ComponentResource):
             # Create nat gateways if ha_nat enabled
             if private_subnets and ha_nat:
                 nat_details[subnet.az] = self._create_nat_gateway(
-                    f"{subnet.az}", subnet
+                    f"{name}-{subnet.az}", public_subnet
                 )
-        # If ha_nat is not enabled. We create only one nat gateway
-        # in the az of the first subnet
-        nat_details[public_subnets[0].az] = self._create_nat_gateway(
-            f"{public_subnets[0].az}", self.public_subnets[0]
-        )
+        if private_subnets and not ha_nat:
+            # If ha_nat is not enabled. We create only one nat gateway
+            # in the az of the first subnet
+            nat_details[public_subnets[0].az] = self._create_nat_gateway(
+                f"{name}-{public_subnets[0].az}", self.public_subnets[0]
+            )
 
         # Create Private subnets
         self.private_subnets = []
@@ -122,24 +124,39 @@ class Vpc(pulumi.ComponentResource):
                         nat_gateway_id=list(nat_details.values())[0].id,
                     )
                 ]
-                * self.vpc_peering_routes if self.vpc_peering_routes else [],
+                * self.vpc_peering_routes
+                if self.vpc_peering_routes
+                else [],
                 opts=pulumi.ResourceOptions(parent=self.vpc),
             )
             self.private_route_tables.append(private_rt)
             for subnet in private_subnets:
-                if ha_nat:
-                    private_rt = self._create_rout_tables(
-                        f"{subnet.az}-private-rt",
-                        [
-                            aws.ec2.RouteTableRouteArgs(
-                                cidr_block="0.0.0.0/0",
-                                nat_gateway_id=nat_details.get(f"{subnet.az}").id,
-                            )
-                        ]
-                        * self.vpc_peering_routes,
-                        opts=pulumi.ResourceOptions(parent=self.vpc),
-                    )
-                    self.private_route_tables.append(private_rt)
+                private_subnet = self._create_subnet(
+                    subnet.cidr,
+                    subnet.az,
+                    self.private_route_tables[0],
+                    True,
+                    "private",
+                    subnet.tags,
+                )
+                self.private_subnets.append(private_subnet)
+                self.private_subnet_ids.append(private_subnet.id)
+        elif private_subnets and ha_nat:
+            for subnet in private_subnets:
+                private_rt = self._create_rout_tables(
+                    f"{subnet.az}-private-rt",
+                    [
+                        aws.ec2.RouteTableRouteArgs(
+                            cidr_block="0.0.0.0/0",
+                            nat_gateway_id=nat_details.get(f"{subnet.az}").id,
+                        )
+                    ]
+                    * self.vpc_peering_routes
+                    if self.vpc_peering_routes
+                    else [],
+                    opts=pulumi.ResourceOptions(parent=self.vpc),
+                )
+                self.private_route_tables.append(private_rt)
                 private_subnet = self._create_subnet(
                     subnet.cidr, subnet.az, private_rt, True, "private", subnet.tags
                 )
