@@ -23,7 +23,9 @@ def _tag_resource(args, tags) -> pulumi.ResourceTransformationResult:
         # We need to handle autoscaling group resource differently
         if args.type_ == "aws:autoscaling/group:Group":
             tag_list = [
-                aws.autoscaling.GroupTagArgs(key=k, value=v, propagate_at_launch=True)
+                aws.autoscaling.GroupTagArgs(
+                    key=k, value=v, propagate_at_launch=True
+                )  # noqa E501
                 for k, v in tags.items()
             ]
             args.props["tags"] = tag_list * tags
@@ -90,9 +92,9 @@ taggable_aws_resource_list = [
     "aws:datasync/task:Task",
     "aws:dax/cluster:Cluster",
     "aws:directconnect/connection:Connection",
-    "aws:directconnect/hostedPrivateVirtualInterfaceAccepter:HostedPrivateVirtualInterfaceAccepter",
-    "aws:directconnect/hostedPublicVirtualInterfaceAccepter:HostedPublicVirtualInterfaceAccepter",
-    "aws:directconnect/hostedTransitVirtualInterfaceAcceptor:HostedTransitVirtualInterfaceAcceptor",
+    "aws:directconnect/hostedPrivateVirtualInterfaceAccepter:HostedPrivateVirtualInterfaceAccepter",  # noqa E501
+    "aws:directconnect/hostedPublicVirtualInterfaceAccepter:HostedPublicVirtualInterfaceAccepter",  # noqa E501
+    "aws:directconnect/hostedTransitVirtualInterfaceAcceptor:HostedTransitVirtualInterfaceAcceptor",  # noqa E501
     "aws:directconnect/linkAggregationGroup:LinkAggregationGroup",
     "aws:directconnect/privateVirtualInterface:PrivateVirtualInterface",
     "aws:directconnect/publicVirtualInterface:PublicVirtualInterface",

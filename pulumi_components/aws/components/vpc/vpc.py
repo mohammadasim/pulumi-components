@@ -25,7 +25,9 @@ class Vpc(pulumi.ComponentResource):
         protected_eip: bool = False,
         opts: Optional[pulumi.ResourceOptions] = None,
     ):
-        super().__init__("pulumi-components:aws:components:vpc", name, {}, opts)
+        super().__init__(
+            "pulumi-components:aws:components:vpc", name, {}, opts
+        )  # noqa E501
 
         if instance_tenancy.lower() not in ["default", "dedicated"]:
             raise ValueError(
@@ -66,7 +68,9 @@ class Vpc(pulumi.ComponentResource):
                     peering.account_id,
                     peering.cidr,
                 )
-                self.vpc_peering_routes.append(peering_details.get("vpc_routes"))
+                self.vpc_peering_routes.append(
+                    peering_details.get("vpc_routes")
+                )  # noqa E501
 
         # Create public subnets
         self.public_subnets = []
@@ -158,7 +162,12 @@ class Vpc(pulumi.ComponentResource):
                 )
                 self.private_route_tables.append(private_rt)
                 private_subnet = self._create_subnet(
-                    subnet.cidr, subnet.az, private_rt, True, "private", subnet.tags
+                    subnet.cidr,
+                    subnet.az,
+                    private_rt,
+                    True,
+                    "private",
+                    subnet.tags,  # noqa E501
                 )
                 self.private_subnets.append(private_subnet)
                 self.private_subnet_ids.append(private_subnet.id)
@@ -232,12 +241,18 @@ class Vpc(pulumi.ComponentResource):
             )
             remote_cidr_block = remote_vpc.cidr_block
         else:
-            raise ValueError("You must either provide an aws account_id or aws profile")
+            raise ValueError(
+                "You must either provide an aws account_id or aws profile"
+            )  # noqa E501
         # Resource option for these resources
         this_resource_option = pulumi.ResourceOptions(parent=self)
-        this_account_id = aws.get_caller_identity(opts=this_resource_option).account_id
+        this_account_id = aws.get_caller_identity(
+            opts=this_resource_option
+        ).account_id  # noqa E501
 
-        if remote_account_id == this_account_id and region == conf.get("region"):
+        if remote_account_id == this_account_id and region == conf.get(
+            "region"
+        ):  # noqa E501
             same_account_peering = True
 
         # If we are requesting the peering connection
@@ -252,7 +267,9 @@ class Vpc(pulumi.ComponentResource):
                 tags=self.vpc.tags_all.apply(
                     lambda x: {
                         "Name": f"[{x['Name']}] <-> [{peering_vpc_name}]",
-                        "Side": "Local" if same_account_peering else "Requester",
+                        "Side": "Local"
+                        if same_account_peering
+                        else "Requester",  # noqa E501
                     }
                 ),
                 opts=this_resource_option,
@@ -262,10 +279,12 @@ class Vpc(pulumi.ComponentResource):
             # in the same aws account
             if not same_account_peering:
                 # We need to first get the peering connection
-                remote_peering_connection = aws.ec2.get_vpc_peering_connection_output(
-                    peer_vpc_id=peering_vpc_id,
-                    vpc_id=self.vpc.id,
-                    opts=remote_invoke_option,
+                remote_peering_connection = (
+                    aws.ec2.get_vpc_peering_connection_output(  # noqa E501
+                        peer_vpc_id=peering_vpc_id,
+                        vpc_id=self.vpc.id,
+                        opts=remote_invoke_option,
+                    )
                 )
                 # Create vpc peering accepter connection
                 peering_connection = aws.ec2.VpcPeeringConnectionAccepter(
@@ -307,7 +326,9 @@ class Vpc(pulumi.ComponentResource):
         opts: pulumi.ResourceOptions = None,
     ) -> aws.ec2.RouteTable:
         """Creates and returns a route table resource with given parameters"""
-        return aws.ec2.RouteTable(name, vpc_id=self.vpc.id, routes=routes, opts=opts)
+        return aws.ec2.RouteTable(
+            name, vpc_id=self.vpc.id, routes=routes, opts=opts
+        )  # noqa E501
 
     def _create_subnet(
         self,
@@ -338,13 +359,17 @@ class Vpc(pulumi.ComponentResource):
         )
         return subnet
 
-    def _create_nat_gateway(self, name, subnet: aws.ec2.Subnet) -> aws.ec2.NatGateway:
+    def _create_nat_gateway(
+        self, name, subnet: aws.ec2.Subnet
+    ) -> aws.ec2.NatGateway:  # noqa E501
         """Creates EIP and NatGateway resources.
         Returns NatGateway resource"""
         eip = aws.ec2.Eip(
             f"{name}-nat-eip",
             vpc=True,
-            opts=pulumi.ResourceOptions(protect=self.protected_eip, parent=subnet),
+            opts=pulumi.ResourceOptions(
+                protect=self.protected_eip, parent=subnet
+            ),  # noqa E501
         )
         nat = aws.ec2.NatGateway(
             f"{name}-nat-gateway",

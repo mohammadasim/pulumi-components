@@ -13,7 +13,9 @@ class VpcSubnetArgs:
 
     cidr: pulumi.Input[str] = pulumi.property("cidr")
     az: pulumi.Input[str] = pulumi.property("az")
-    tags: Optional[pulumi.Input[Mapping[str, pulumi.Input[str]]]] = pulumi.property(
+    tags: Optional[
+        pulumi.Input[Mapping[str, pulumi.Input[str]]]
+    ] = pulumi.property(  # noqa E501
         "tags", default=None
     )
 
@@ -34,7 +36,7 @@ class VpcPeeringArgs:
     ):
         if accepter and (account_id or cidr):
             raise VpcPeeringException(
-                "Account ID or CIDR can't be defined when accepter is set to True"
+                "Account ID or CIDR can't be defined when accepter is set to True"  # noqa E501
             )
         pulumi.set(self, "name", name)
         pulumi.set(self, "vpc_id", vpc_id)

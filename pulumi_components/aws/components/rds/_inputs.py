@@ -7,7 +7,7 @@ import pulumi_aws as aws
 
 @pulumi.input_type
 class RdsSecurityGroupIngressArgs:
-    """A class defining a security group ingress args resource in rds security group"""
+    """A class defining a security group ingress args resource in rds security group"""  # noqa E501
 
     def __init__(
         self,
@@ -46,10 +46,14 @@ class RdsSecurityGroupIngressArgs:
             )
             security_group_ingress_args.append(sgi_args)
         # Set security_group_ingress_args as a parameter
-        pulumi.set(self, "security_group_ingress_args", security_group_ingress_args)
+        pulumi.set(
+            self, "security_group_ingress_args", security_group_ingress_args
+        )  # noqa E501
 
     @property
     @pulumi.getter(name="security_group_ingress_args")
-    def security_group_ingress_args(self) -> Sequence[aws.ec2.SecurityGroupIngressArgs]:
+    def security_group_ingress_args(
+        self,
+    ) -> Sequence[aws.ec2.SecurityGroupIngressArgs]:  # noqa E501
         """Getter method for security group ingress args"""
         ...

@@ -14,12 +14,19 @@ class RdsSecurityGroup(ComponentResource):
         name: str,
         db_engine: str,
         vpc_id: str,
-        ingress_security_group_cidrs: Optional[pulumi.Input[Sequence[str]]] = [],
-        ingress_security_group_ids: Optional[pulumi.Input[Sequence[str]]] = None,
+        ingress_security_group_cidrs: Optional[
+            pulumi.Input[Sequence[str]]
+        ] = [],  # noqa E501
+        ingress_security_group_ids: Optional[
+            pulumi.Input[Sequence[str]]
+        ] = None,  # noqa E501
         opts: Optional[pulumi.ResourceOptions] = None,
     ):
         super().__init__(
-            "pulumi-components:aws:components:rds-security-group", name, {}, opts
+            "pulumi-components:aws:components:rds-security-group",
+            name,
+            {},
+            opts,  # noqa E501
         )
         self.security_group = aws.ec2.SecurityGroup(
             f"{name}-security-group",
@@ -33,7 +40,10 @@ class RdsSecurityGroup(ComponentResource):
             ),
             egress=[
                 aws.ec2.SecurityGroupEgressArgs(
-                    from_port=0, to_port=0, protocol="-1", cidr_blocks=["0.0.0.0/0"]
+                    from_port=0,
+                    to_port=0,
+                    protocol="-1",
+                    cidr_blocks=["0.0.0.0/0"],  # noqa E501
                 )
             ],
             opts=pulumi.ResourceOptions(parent=self),
@@ -113,12 +123,18 @@ class RDSInstance(ComponentResource):
         tags=None,
         subnet_ids: List[str] = [],
         additional_vpc_security_group_ids: Optional[List[str]] = [],
-        ingress_security_group_cidrs: Optional[pulumi.Input[Sequence[str]]] = None,
-        ingress_security_group_ids: Optional[pulumi.Input[Sequence[str]]] = None,
+        ingress_security_group_cidrs: Optional[
+            pulumi.Input[Sequence[str]]
+        ] = None,  # noqa E501
+        ingress_security_group_ids: Optional[
+            pulumi.Input[Sequence[str]]
+        ] = None,  # noqa E501
         opts: Optional[pulumi.ResourceOptions] = None,
         **kwargs,
     ):
-        super().__init__("pulumi-components:aws:components:rdsInstance", name, {}, opts)
+        super().__init__(
+            "pulumi-components:aws:components:rdsInstance", name, {}, opts
+        )  # noqa E501
         if tags is None:
             tags = {}
         self.security_group = RdsSecurityGroup(
@@ -174,9 +190,9 @@ class RDSInstance(ComponentResource):
                 deletion_protection=deletion_protection,
                 domain=domain,
                 domain_iam_role_name=domain_iam_role_name,
-                enabled_cloudwatch_logs_exports=enabled_cloudwatch_logs_exports,
+                enabled_cloudwatch_logs_exports=enabled_cloudwatch_logs_exports,  # noqa E501
                 final_snapshot_identifier=final_snapshot_identifier,
-                iam_database_authentication_enabled=iam_database_authentication_enabled,
+                iam_database_authentication_enabled=iam_database_authentication_enabled,  # noqa E501
                 kms_key_id=kms_key_id,
                 maintenance_window=maintenance_window,
                 max_allocated_storage=max_allocated_storage,
@@ -184,8 +200,8 @@ class RDSInstance(ComponentResource):
                 monitoring_role_arn=monitoring_role_arn,
                 multi_az=multi_az,
                 performance_insights_enabled=performance_insights_enabled,
-                performance_insights_kms_key_id=performance_insights_kms_key_id,
-                performance_insights_retention_period=performance_insights_retention_period,
+                performance_insights_kms_key_id=performance_insights_kms_key_id,  # noqa E501
+                performance_insights_retention_period=performance_insights_retention_period,  # noqa E501
                 publicly_accessible=publicly_accessible,
                 skip_final_snapshot=skip_final_snapshot,
                 storage_encrypted=storage_encrypted,
