@@ -54,7 +54,7 @@ class RDSInstance(ComponentResource):
         publicly_accessible: bool = False,
         skip_final_snapshot: bool = True,
         storage_encrypted: bool = False,
-        tags=None,
+        tags: Optional[Dict[str, str]] = {},
         subnet_ids: List[str] = [],
         parameters: Sequence[Dict] = [],
         additional_vpc_security_group_ids: Optional[List[str]] = [],
@@ -70,8 +70,7 @@ class RDSInstance(ComponentResource):
         super().__init__(
             "pulumi-components:aws:components:rdsInstance", name, {}, opts
         )  # noqa E501
-        if tags is None:
-            tags = {}
+        # Create security group
         self.security_group = RdsSecurityGroup(
             name,
             engine,
@@ -82,20 +81,23 @@ class RDSInstance(ComponentResource):
         self.security_group_ids = additional_vpc_security_group_ids.append(
             self.security_group.id
         )
+        # Create subnet-group
         self.subnet_group = RdsSubnetGroup(name, subnet_ids)
-        rds_parameter_group_args = []
-        for parameter in parameters:
-            rds_parameter_group_args.append(
-                aws.rds.ParameterGroupParameterArgs(
-                    name=parameter["name"],
-                    value=parameter["value"],
-                    apply_method=parameter["apply_method"]
-                    if "apply_method" in parameter
-                    else "pending-reboot",
-                )
+
+        # Create DB parameter group
+        rds_parameter_group_args = [
+            aws.rds.ParameterGroupParameterArgs(
+                name=param["name"],
+                value=param["value"],
+                apply_method=param["apply_method"]
+                if "apply_method" in param
+                else "pending-reboot",
             )
+            for param in parameters
+        ]
         self.parameter_group = aws.rds.ParameterGroup(
-            f"{name}-parameter-group",
+            (rsc_name := f"{name}-parameter-group"),
+            name=f"{rsc_name}-{family}",
             description=f"Parameter group for {name} rds instance",
             family=family,
             name=f"{name}-parameter-group",
