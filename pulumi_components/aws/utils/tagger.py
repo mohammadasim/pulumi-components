@@ -3,7 +3,6 @@ import pulumi_aws as aws
 
 conf = pulumi.Config()
 project_tags = conf.get_object("tags")
-stack_name = pulumi.get_stack()
 
 
 def register_tags() -> None:
@@ -13,7 +12,7 @@ def register_tags() -> None:
     )
 
 
-def _tag_resource(args, tags) -> pulumi.ResourceTransformationResult:
+def _tag_resource(args, tags) -> pulumi.ResourceTransformationResult:  # noqa E501
     """helper function to add tags to taggable aws resources at run time"""
     # Check if the aws resource is taggable or not
     if can_be_tagged(args.type_):
@@ -28,14 +27,32 @@ def _tag_resource(args, tags) -> pulumi.ResourceTransformationResult:
                 )  # noqa E501
                 for k, v in tags.items()
             ]
-            args.props["tags"] = (
-                tag_list * tags * args.props["tags"]
-                if args.props.get("tags")
-                else []  # noqa E501
+            # Autoscaling group requires a list of GroupTagArgs
+            args.props["tags"] = pulumi.Output.from_input(
+                args.props["tags"]
+            ).apply(  # noqa E501
+                # We add the Name tag with value set to the
+                # name of the resource
+                lambda tags: [
+                    aws.autoscaling.GroupTagArgs(
+                        key="Name",
+                        value=f"{args.name}",
+                    ),
+                    *tag_list,
+                    *(tags or []),
+                ]
             )
         else:
-            args.props["tags"] = (
-                tags * args.props["tags"] if args.props.get("tags") else []
+            args.props["tags"] = pulumi.Output.from_input(
+                args.props["tags"]
+            ).apply(  # noqa E501
+                # We add the Name tag with value set to the
+                # name of the resource
+                lambda x: {
+                    "Name": f"{args.name}",
+                    **tags,
+                    **(x or {}),
+                }
             )
         return pulumi.ResourceTransformationResult(args.props, args.opts)
 

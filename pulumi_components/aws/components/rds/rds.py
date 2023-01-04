@@ -100,7 +100,6 @@ class RDSInstance(ComponentResource):
             name=f"{rsc_name}-{family}",
             description=f"Parameter group for {name} rds instance",
             family=family,
-            name=f"{name}-parameter-group",
             parameters=rds_parameter_group_args,
         )
         self.rds_instance = aws.rds.Instance(
