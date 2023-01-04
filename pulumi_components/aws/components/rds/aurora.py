@@ -4,7 +4,7 @@ import pulumi
 import pulumi_aws as aws
 from pulumi import ComponentResource, ResourceOptions
 
-from .common import RdsSecurityGroup
+from .common import RdsSecurityGroup, RdsSubnetGroup
 
 
 class AuroraCluster(ComponentResource):
@@ -38,7 +38,9 @@ class AuroraCluster(ComponentResource):
         allow_major_version_upgrade: bool = False,
         apply_immediately: bool = False,
         tags: Optional[Dict[str, str]] = {},
-        skip_final_snapshot: bool = True,
+        skip_final_snapshot: bool = False,
+        storage_encrypted: bool = True,
+        deletion_protection: bool = True,
         opts: Optional[ResourceOptions] = None,
         **kwargs,
     ) -> None:
@@ -90,5 +92,36 @@ class AuroraCluster(ComponentResource):
             name=f"{rsc_name}-{family}",
             family=family,
             parameters=[db_parameter_group_args],
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        # Create subnet group
+        self.subnet_group = RdsSubnetGroup(name, subnet_ids)
+
+        # Create the cluster
+        self.cluster = aws.rds.Cluster(
+            (cluster_name := f"{name}-cluster"),
+            cluster_identifier=cluster_name,
+            availability_zones=availability_zones,
+            db_cluster_parameter_group_name=self.cluster_parameter_group.name,
+            db_subnet_group_name=self.subnet_group.subnet_group.name,
+            engine=engine,
+            engine_mode=engine_mode,
+            engine_version=engine_version,
+            master_password=master_password,
+            master_username=master_username,
+            storage_encrypted=storage_encrypted,
+            vpc_security_group_ids=self.security_group_ids,
+            skip_final_snapshot=skip_final_snapshot,
+            final_snapshot_identifier=f"{rsc_name}-final-snapshot",
+            preferred_backup_window=preferred_backup_window,
+            preferred_maintenance_window=preferred_maintenance_window,
+            backtrack_window=backtrack_window,
+            backup_retention_period=backup_retention_period,
+            copy_tags_to_snapshot=copy_tags_to_snapshots,
+            deletion_protection=deletion_protection,
+            allow_major_version_upgrade=allow_major_version_upgrade,
+            apply_immediately=apply_immediately,
+            tags=tags,
             opts=pulumi.ResourceOptions(parent=self),
         )
