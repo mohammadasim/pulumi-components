@@ -9,6 +9,7 @@ from .common import RdsSecurityGroup, RdsSubnetGroup
 
 class RDSInstance(ComponentResource):
     """A class defining an RDS instance custom resource"""
+
     def __init__(
         self,
         name: str,

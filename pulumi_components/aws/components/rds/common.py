@@ -24,7 +24,7 @@ class RdsSecurityGroup(ComponentResource):
         opts: Optional[pulumi.ResourceOptions] = None,
     ):
         super().__init__(
-            "pulumi-components:aws:components:rds-security-group",
+            f"pulumi-components:aws:components:{name}-security-group",
             name,
             {},
             opts,  # noqa E501
@@ -62,7 +62,10 @@ class RdsSubnetGroup(ComponentResource):
         opts: Optional[pulumi.ResourceOptions] = None,
     ):
         super().__init__(
-            "pulumi-components:aws:components:rds-subnet-group", name, {}, opts
+            f"pulumi-components:aws:components:{name}-subnet-group",
+            name,
+            {},
+            opts,  # noqa E501
         )
         if not subnet_ids:
             raise ValueError["subnet ids are required"]
