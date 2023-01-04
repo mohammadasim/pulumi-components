@@ -2,7 +2,7 @@ from typing import Dict, List, Optional, Sequence
 
 import pulumi
 import pulumi_aws as aws
-from _inputs import RdsSecurityGroupIngressArgs
+from ._inputs import RdsSecurityGroupIngressArgs
 from pulumi import ComponentResource
 
 
@@ -37,7 +37,7 @@ class RdsSecurityGroup(ComponentResource):
                 f"{name}-security-group-ingress-rule",
                 ingress_security_group_cidrs,
                 ingress_security_group_ids,
-            ),
+            ).security_group_ingress_args,
             egress=[
                 aws.ec2.SecurityGroupEgressArgs(
                     from_port=0,
@@ -85,9 +85,9 @@ class RDSInstance(ComponentResource):
         engine_version: str,
         family: str,
         identifier: str,
+        username: str,
         password: str,
         vpc_id: str,
-        parameters: Sequence[Dict],
         *,
         allow_major_version_upgrade: bool = False,
         apply_immediately: bool = False,
@@ -122,6 +122,7 @@ class RDSInstance(ComponentResource):
         storage_encrypted: bool = False,
         tags=None,
         subnet_ids: List[str] = [],
+        parameters: Sequence[Dict] = [],
         additional_vpc_security_group_ids: Optional[List[str]] = [],
         ingress_security_group_cidrs: Optional[
             pulumi.Input[Sequence[str]]
@@ -173,6 +174,7 @@ class RDSInstance(ComponentResource):
                 engine=engine,
                 engine_version=engine_version,
                 identifier=identifier,
+                username=username,
                 password=password,
                 allow_major_version_upgrade=allow_major_version_upgrade,
                 apply_immediately=apply_immediately,

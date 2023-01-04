@@ -24,7 +24,6 @@ class RdsSecurityGroupIngressArgs:
             raise ValueError(
                 "This component currently only supports Postgres and Mysql"
             )
-
         security_group_ingress_args = []
         if cidr_blocks:
             sgi_args = aws.ec2.SecurityGroupIngressArgs(
