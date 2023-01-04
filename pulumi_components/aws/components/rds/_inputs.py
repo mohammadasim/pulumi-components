@@ -16,7 +16,10 @@ class RdsSecurityGroupIngressArgs:
         cidr_blocks: Optional[Sequence[pulumi.Input[str]]] = None,
         security_group_ids: Optional[Sequence[pulumi.Input[str]]] = None,
     ):
-        if db_engine.lower() == "postgresql":
+        if (
+            db_engine.lower() == "postgresql"
+            or db_engine.lower() == "postgres"  # noqa E501
+        ):
             port = 5432
         elif db_engine.lower() == "mysql":
             port = 3306

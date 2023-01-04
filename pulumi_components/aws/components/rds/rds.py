@@ -2,8 +2,9 @@ from typing import Dict, List, Optional, Sequence
 
 import pulumi
 import pulumi_aws as aws
-from ._inputs import RdsSecurityGroupIngressArgs
 from pulumi import ComponentResource
+
+from ._inputs import RdsSecurityGroupIngressArgs
 
 
 class RdsSecurityGroup(ComponentResource):
@@ -106,7 +107,7 @@ class RDSInstance(ComponentResource):
         domain: str = None,
         domain_iam_role_name: str = None,
         enabled_cloudwatch_logs_exports: Sequence[str] = [],
-        final_snapshot_identifier: str = "",
+        final_snapshot_identifier: str = None,
         iam_database_authentication_enabled: bool = False,
         kms_key_id: str = None,
         maintenance_window: str = "sun:01:00-sun:03:00",
@@ -114,7 +115,7 @@ class RDSInstance(ComponentResource):
         monitoring_interval: int = 0,
         monitoring_role_arn: str = None,
         multi_az: bool = False,
-        performance_insights_enabled: bool = False,
+        performance_insights_enabled: bool = True,
         performance_insights_kms_key_id: str = None,
         performance_insights_retention_period: int = 7,
         publicly_accessible: bool = False,
@@ -164,6 +165,7 @@ class RDSInstance(ComponentResource):
             f"{name}-parameter-group",
             description=f"Parameter group for {name} rds instance",
             family=family,
+            name=f"{name}-parameter-group",
             parameters=rds_parameter_group_args,
         )
         self.rds_instance = aws.rds.Instance(
@@ -183,7 +185,9 @@ class RDSInstance(ComponentResource):
                 backup_window=backup_window,
                 blue_green_update=blue_green_update,
                 ca_cert_identifier=ca_cert_identifier,
-                character_set_name=character_set_name,
+                character_set_name=character_set_name
+                if int(engine_version) >= 14
+                else None,  # noqa E501
                 copy_tags_to_snapshot=copy_tags_to_snapshot,
                 custom_iam_instance_profile=custom_iam_instance_profile,
                 customer_owned_ip_enabled=customer_owned_ip_enabled,
@@ -207,12 +211,12 @@ class RDSInstance(ComponentResource):
                 publicly_accessible=publicly_accessible,
                 skip_final_snapshot=skip_final_snapshot,
                 storage_encrypted=storage_encrypted,
-                db_subnet_group_name=self.subnet_group.name,
+                db_subnet_group_name=self.subnet_group.subnet_group.name,
                 vpc_security_group_ids=self.security_group_ids,
                 parameter_group_name=self.parameter_group,
                 tags=tags,
-                opts=pulumi.ResourceOptions(parent=self),
             ),
+            opts=pulumi.ResourceOptions(parent=self),
         )
         self.register_outputs(
             {
