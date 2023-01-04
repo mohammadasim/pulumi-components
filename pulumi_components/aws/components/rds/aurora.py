@@ -23,7 +23,6 @@ class AuroraCluster(ComponentResource):
         vpc_id: str,
         availability_zones: Sequence[pulumi.Input[str]],
         instances: Sequence[Dict],
-        database_name: Optional[str],
         *,
         master_username: Optional[str] = "admin",
         additional_security_group_ids: List[pulumi.Input[str]] = [],
@@ -124,4 +123,36 @@ class AuroraCluster(ComponentResource):
             apply_immediately=apply_immediately,
             tags=tags,
             opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.instances = [
+            aws.rds.ClusterInstance(
+                (rsc_name := f"{name}-instance-{i}"),
+                apply_immediately=apply_immediately,
+                allow_major_version_upgrade=allow_major_version_upgrade,
+                availability_zone=availability_zones,
+                cluster_identifier=self.cluster.id,
+                copy_tags_to_snapshot=copy_tags_to_snapshots,
+                db_parameter_group_name=self.db_parameter_group.name,
+                db_subnet_group_name=self.subnet_group.subnet_group.name,
+                engine=engine,
+                engine_version=engine_version,
+                identifier=f"{rsc_name}",
+                instance_class=instances[i].get("instance_class"),
+                preferred_backup_window=preferred_backup_window,
+                preferred_maintenance_window=preferred_maintenance_window,
+                tags=tags,
+                opts=pulumi.ResourceOptions(parent=self.cluster),
+            )
+            for i in range(len(instances))
+        ]
+        self.register_outputs(
+            {
+                "cluster": self.cluster,
+                "instances": self.instances,
+                "cluster_parameter_group": self.cluster_parameter_group,
+                "db_parameter_group": self.db_parameter_group,
+                "security_group": self.security_group,
+                "subnet_group": self.subnet_group,
+            }
         )
