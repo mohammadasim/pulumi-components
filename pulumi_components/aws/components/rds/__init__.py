@@ -1,4 +1,4 @@
-from rds import RDSInstance
+from .rds import RDSInstance
 
 from ._inputs import RdsSecurityGroupIngressArgs
 
