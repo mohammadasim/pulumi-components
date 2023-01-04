@@ -28,9 +28,15 @@ def _tag_resource(args, tags) -> pulumi.ResourceTransformationResult:
                 )  # noqa E501
                 for k, v in tags.items()
             ]
-            args.props["tags"] = tag_list * tags
+            args.props["tags"] = (
+                tag_list * tags * args.props["tags"]
+                if args.props.get("tags")
+                else []  # noqa E501
+            )
         else:
-            args.props["tags"] = tags
+            args.props["tags"] = (
+                tags * args.props["tags"] if args.props.get("tags") else []
+            )
         return pulumi.ResourceTransformationResult(args.props, args.opts)
 
 
