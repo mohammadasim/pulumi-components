@@ -137,8 +137,6 @@ class AuroraCluster(ComponentResource):
                 engine_version=engine_version,
                 identifier=f"{rsc_name}",
                 instance_class=instances[i].get("instance_class"),
-                preferred_backup_window=preferred_backup_window,
-                preferred_maintenance_window=preferred_maintenance_window,
                 tags=tags,
                 opts=pulumi.ResourceOptions(parent=self.cluster),
             )
