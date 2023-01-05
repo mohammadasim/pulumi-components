@@ -90,7 +90,7 @@ class AuroraCluster(ComponentResource):
             (rsc_name := f"{name}-db-parameter-group"),
             name=f"{rsc_name}-{family}",
             family=family,
-            parameters=[db_parameter_group_args],
+            parameters=db_parameter_group_args,
             opts=pulumi.ResourceOptions(parent=self),
         )
 
@@ -129,8 +129,6 @@ class AuroraCluster(ComponentResource):
             aws.rds.ClusterInstance(
                 (rsc_name := f"{name}-instance-{i}"),
                 apply_immediately=apply_immediately,
-                allow_major_version_upgrade=allow_major_version_upgrade,
-                availability_zone=availability_zones,
                 cluster_identifier=self.cluster.id,
                 copy_tags_to_snapshot=copy_tags_to_snapshots,
                 db_parameter_group_name=self.db_parameter_group.name,
