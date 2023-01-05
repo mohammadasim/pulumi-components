@@ -24,7 +24,7 @@ class AuroraCluster(ComponentResource):
         availability_zones: Sequence[pulumi.Input[str]],
         instances: Sequence[Dict],
         *,
-        master_username: Optional[str] = "admin",
+        master_username: Optional[str] = "administrator",
         additional_security_group_ids: List[pulumi.Input[str]] = [],
         ingress_security_group_cidrs: Sequence[pulumi.Input[str]] = None,
         ingress_security_group_ids: Sequence[pulumi.Input[str]] = None,
