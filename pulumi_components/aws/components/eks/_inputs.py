@@ -185,3 +185,27 @@ class ClusterNodeGroupOptionArgs:
     def taints(self) -> Optional[pulumi.Input[Sequence[Mapping[str, str]]]]:
         """Custom taints that need to be added to the Node Group"""
         ...
+
+
+@pulumi.input_type
+class CNIAddonArgs:
+    """A Class containg options for Kubernetes CNI plugin option"""
+
+    kubeconfig: pulumi.Input[str] = pulumi.property("kubeconfig")
+    version: pulumi.Input[str] = pulumi.property("version")
+    role_arn: pulumi.Input[str] = pulumi.property("role_arn")
+    env_vars: pulumi.Input[Mapping[str, str]] = pulumi.property("env_vars")
+
+
+@pulumi.input_type
+class KubeProxyAddonArgs:
+    """A Class containing options for Kubernetes proxy addon"""
+
+    kubeconfig: pulumi.Input[str] = pulumi.property("kubeconfig")
+    version: pulumi.Input[str] = pulumi.property("version")
+
+
+@pulumi.input_type
+class CoreDNSAddonArgs:
+    kubeconfig: pulumi.Input[str] = pulumi.property("kubeconfig")
+    version: pulumi.Input[str] = pulumi.property("version")
